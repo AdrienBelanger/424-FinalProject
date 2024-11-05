@@ -6,12 +6,13 @@ agents/human_agent.py
 agents/random_agent.py
 
 constants.py
+
 helpers.py
 README.md
 requirements.txt
-simulator.py
 store.py
 ui.py
 utils.py
 world.py
 README.md
+simulator.py
