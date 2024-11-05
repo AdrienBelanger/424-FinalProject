@@ -1,0 +1,16 @@
+__pycache__/*
+agents/__pycache__/*
+agents/agent.py
+agents/gpt_greedy_corners_agent.py
+agents/human_agent.py
+agents/random_agent.py
+
+constants.py
+helpers.py
+README.md
+requirements.txt
+simulator.py
+store.py
+ui.py
+utils.py
+world.py
