@@ -35,6 +35,18 @@ class StudentAgent(Agent):
     Please check the sample implementation in agents/random_agent.py or agents/human_agent.py for more details.
     """
 
+    """
+    IDEAS:
+
+      - MTCS: Tree policy: Sim Policy:
+      - Simulated Annealing: 
+
+      - Greedy?
+      - GPT_greedy_corner works with score and combines multiple methods. 
+      
+
+    """
+
     # Some simple code to help you with timing. Consider checking 
     # time_taken during your search and breaking with the best answer
     # so far when it nears 2 seconds.

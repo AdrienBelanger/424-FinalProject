@@ -29,7 +29,7 @@ This will spawn a random game board of size NxN, and run the two agents of class
 To visualize the moves within a game, use the `--display` flag. You can set the delay (in seconds) using `--display_delay` argument to better visualize the steps the agents take to win a game.
 
 ```bash
-python simulator.py --player_1 random_agent --player_2 random_agent --display
+python3 simulator.py --player_1 random_agent --player_2 random_agent --display
 ```
 
 ## Play on your own!
@@ -37,7 +37,7 @@ python simulator.py --player_1 random_agent --player_2 random_agent --display
 To take control of one side of the game and compete against the random agent yourself, use a [`human_agent`](agents/human_agent.py) to play the game.
 
 ```bash
-python simulator.py --player_1 human_agent --player_2 random_agent --display
+python3 simulator.py --player_1 human_agent --player_2 random_agent --display
 ```
 
 ## Autoplaying multiple games

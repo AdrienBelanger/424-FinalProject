@@ -1,18 +1,18 @@
 __pycache__/*
-agents/__pycache__/*
-agents/agent.py
-agents/gpt_greedy_corners_agent.py
-agents/human_agent.py
-agents/random_agent.py
+Games/agents/__pycache__/*
+Games/agents/agent.py
+Games/agents/gpt_greedy_corners_agent.py
+Games/agents/human_agent.py
+Games/agents/random_agent.py
 
-constants.py
+Games/constants.py
 
-helpers.py
-README.md
-requirements.txt
-store.py
-ui.py
-utils.py
-world.py
-README.md
-simulator.py
+Games/helpers.py
+Games/README.md
+Games/requirements.txt
+Games/store.py
+Games/ui.py
+Games/utils.py
+Games/world.py
+Games/README.md
+Games/simulator.py
