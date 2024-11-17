@@ -48,6 +48,8 @@ class three_step_Agent(Agent):
       
       # IDEA: Implement Minimax, then MCTS, then Endgame special solver (minimax again?)
 
+      Minimax at small size
+
     """
 
     # Some simple code to help you with timing. Consider checking 
@@ -118,6 +120,7 @@ class three_step_Agent(Agent):
             
           # (outside the for loop) augment depth for IDS
           depth += 1
+          print("Current depth:", depth)
 
       except TimeoutError:
         break # if we dont have time left, then we return the best we have for now

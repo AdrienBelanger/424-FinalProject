@@ -50,13 +50,21 @@ class three_step_Agent(Agent):
     # so far when it nears 2 seconds.
     start_time = time.time()
     
-
+    
     # give ourselves a buffer of 0.001 seconds to return.
     time_limit_to_think = 1.98
 
+    # Start with mcts, then min_max when less empty spots
+    max_empty_spots = 20
+    empty_spots, chess_board_dimensions, spots = count_empty_spots_and_dimensions(chess_board)
+
+    if (empty_spots < max_empty_spots):
+      move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think)
+    else:
+      move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think)
+    
 
 
-    move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think)
 
 
     time_taken = time.time() - start_time
@@ -65,7 +73,7 @@ class three_step_Agent(Agent):
 
 
     if (move == None) :
-      print('smt went wrong and min_max didnt return :( giving random move...')
+      print('smt went wrong and we didn\'t find a move :( giving random move...')
       move = random_move(chess_board,player)
 
     # Dummy return (you should replace this with your actual logic)
@@ -73,11 +81,11 @@ class three_step_Agent(Agent):
     return move
 
   def min_max_give_me_ur_best_move(self, chess_board, player, start_time, time_limit):
-
+    chess_board_dimensions = np.shape(chess_board)
     ops = 3 - player 
     
     valid_moves = get_valid_moves(chess_board, player)
-
+    print("VALID MOVES:", len(valid_moves))
     best_move = None
     best_score = -float('inf')
 
@@ -92,7 +100,7 @@ class three_step_Agent(Agent):
           for move in valid_moves:
             # If we're out of time then raise an error
             if time.time() - start_time > time_limit: raise TimeoutError
-
+            
             # to try moves we create a copy of the chess_board
             sim_board = deepcopy(chess_board)
             # try the move
@@ -113,6 +121,11 @@ class three_step_Agent(Agent):
             
           # (outside the for loop) augment depth for IDS
           depth += 1
+          print("Current depth:", depth)
+          if(depth > chess_board_dimensions[0] * chess_board_dimensions[1]): break
+          
+          
+
 
       except TimeoutError:
         break # if we dont have time left, then we return the best we have for now
@@ -198,9 +211,30 @@ class three_step_Agent(Agent):
           return min_eval
 
 
-
+# definitely need to improve this heuristic
   def heuristic_score(self, chess_board, player, ops):
       # count the number of brown and blue, simple greedy way to evaluate, could maybe use helper, but oh well, works.. find better heuristic?
       player_score = np.sum(chess_board == player)
       opponent_score = np.sum(chess_board == ops)
       return player_score - opponent_score
+
+
+def mcts_give_me_ur_best_move(chess_board, player, start_time, time_limit):
+   return None
+
+
+def count_empty_spots_and_dimensions(chess_board):
+    count = 0
+    spots = 0
+    for i in range(np.shape(chess_board)[0]):
+        x +=1
+        spots +=1
+        for j in range(np.shape(chess_board)[1]):
+            y +=1
+            spots +=1
+            if chess_board[i][j] == 0:
+                count += 1
+    return (count, (x, y))
+      
+
+def mcts_give_me_ur_best_move(): return None
