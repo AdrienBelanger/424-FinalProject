@@ -22,6 +22,11 @@ class StudentAgent(Agent):
     super(StudentAgent, self).__init__()
     self.name = "StudentAgent"
 
+    # add parameters that agent learns here
+    self.state_tree = []
+
+    # reuse info across various searches
+
   def step(self, chess_board, player, opponent):
     """
     Implement the step function of your agent here.
@@ -61,4 +66,16 @@ class StudentAgent(Agent):
 
     # Dummy return (you should replace this with your actual logic)
     # Returning a random valid move as an example
+
+    # Step 1: Tree policy
+
+    # save a tree of state spaces
+    # Example entry: (board_state,score,num_visits,moves)
+    # moves is a dict: {m1:s1, m2:s2,...}
+
+    state_tree.append()
+    
+
+
+    
     return random_move(chess_board,player)
