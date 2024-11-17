@@ -7,7 +7,7 @@ Beyond a few things in the World init, which can be copy/pasted this should be a
 all of what you'll need to simulate games in your search method.
 
 Functions:
-    get_directions    - a simple helper to deal with the geometry of Reversi moves
+    get_directions    - a simple helper to deal with the geometry of Reversi moves.
     count_capture     - how many flips does this move make. Game logic defines valid moves as those with >0 returns from this function. 
     count_capture_dir - a helper for the above, unlikely to be used externally
     execute_move      - update the chess_board by simulating a move

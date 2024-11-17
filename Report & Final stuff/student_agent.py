@@ -2,7 +2,7 @@
 
 
 
-# Student agent: Add your own agent here
+# Student agent: Add your own agent here 
 from agents.agent import Agent
 from store import register_agent
 import sys

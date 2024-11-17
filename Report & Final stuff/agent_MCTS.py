@@ -2,7 +2,13 @@
 
 # Attempt 1)
 
-# Student agent: Add your own agent here
+# Student agent: Add your own agent here DONT FORGET TO REMOVE THE GAME. bcs its only for our folder structure
+
+
+
+
+
+
 from agents.agent import Agent
 from store import register_agent
 import sys
