@@ -61,6 +61,29 @@ class StudentAgent(Agent):
       
 
     """
+    def get_move_scores(chess_board,player):
+
+      moves = get_valid_moves(chess_board,player)
+      scores = np.zeros(len(moves))
+      
+      for i in range(len(moves)):
+        # executes move
+        CB = np.copy(chess_board)
+        execute_move(CB,moves[i],player)
+        fin, player_score, opp_score = check_endgame(CB,player,opponent)
+        # evaluates move initial score
+        scores[i] = player_score - opp_score
+        
+      return scores
+
+    def get_loc_in_tree(state_tree,state):
+
+      for i in range(len(state_tree)):
+        if state_tree[i] == state:
+          return i
+      return -1
+
+      
 
     # Some simple code to help you with timing. Consider checking 
     # time_taken during your search and breaking with the best answer
@@ -73,7 +96,45 @@ class StudentAgent(Agent):
     # Dummy return (you should replace this with your actual logic)
     # Returning a random valid move as an example
 
-    # Step 1: Tree policy
+    # Step 1: gets list of possible moves
+    moves = get_valid_moves(chess_board,player)
+    N = len(moves)
+    move_counts = np.zeros(N) # tracks num move uses
+    scores = np.zeros(N) # tracks move priority (higher num is better)
+    num_sim = 0
+
+    # Step 2: searches tree
+    tree_states = [chess_board] # saved as (board_state,parent_ind) pairs
+    parent_nodes = [None]
+    node_moves = [moves]
+    node_score = [0]
+
+    while time.time() - start_time < 1.9:
+      s = np.copy(chess_board)
+      p = player
+      
+      while True:
+        # checks if node has been visited
+        ind = get_loc_in_tree(tree_states,s)
+        if ind == -1:
+          break
+        # plays best fit move
+        next_move = np.argmax(node_moves[ind])
+        execute_move(s,next_move,p)
+        # swaps player every node
+        if p == player:
+          p = opponent
+        else:
+          p = player
+
+      # if found node not in tree > add it
+      tree_states.append(s)
+      parent_nodes.append(ind)
+      node_moves.append(get_move_scores(s,p))
+      # runs simulation
+      
+        
+        
 
     # save a tree of state spaces
     # Example entry: (board_state,score,num_visits,moves)
