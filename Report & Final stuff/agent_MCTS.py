@@ -4,11 +4,6 @@
 
 # Student agent: Add your own agent here DONT FORGET TO REMOVE THE GAME. bcs its only for our folder structure
 
-
-
-
-
-
 from agents.agent import Agent
 from store import register_agent
 import sys
@@ -102,7 +97,7 @@ class StudentAgent(Agent):
         p,q = swap_players(p,q)
         # checks for endgame
         is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
-      return (p_score-oppscore) > 0
+      return (p_score-opp_score) > 0
         
         
 
@@ -167,15 +162,6 @@ class StudentAgent(Agent):
 
       # update move scores too !!!
       
-      
-        
-        
-
-    # save a tree of state spaces
-    # Example entry: (board_state,score,num_visits,moves)
-    # moves is a dict: {m1:s1, m2:s2,...}
-
-    state_tree.append()
     
 
 
