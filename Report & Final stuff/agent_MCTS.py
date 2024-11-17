@@ -152,7 +152,7 @@ class StudentAgent(Agent):
       parent_nodes.append(ind)
       node_moves.append(get_move_scores(s,p))
       # runs simulation
-      victorious =  simulate_to_end(chess_board,p,q):
+      victorious =  simulate_to_end(chess_board,p,q)
       # backpropagate results
       ind = len(tree_states) - 1
       for d in range(depth):
