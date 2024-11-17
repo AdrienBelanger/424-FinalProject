@@ -1,18 +1,23 @@
 # Student agent: Add your own agent here
-from Game.agents.agent import Agent
-from Game.store import register_agent
+from agents.agent import Agent
+from store import register_agent
 import sys
 import numpy as np
 from copy import deepcopy
 import time
-from Game.helpers import random_move, count_capture, execute_move, check_endgame, get_valid_moves
+from helpers import random_move, count_capture, execute_move, check_endgame, get_valid_moves
 
-#@register_agent("three_step_agent") dont register for now.
+print('Ram USAGE BEFORE (GB):', psutil.virtual_memory()[3]/1000000000)
+ram_before = psutil.virtual_memory()[3]/1000000000
+
+# REMOVE : To check Ram usage
+import psutil
+@register_agent("three_step_agent")
 class three_step_Agent(Agent):
 
   def __init__(self):
     super(three_step_Agent, self).__init__()
-    self.name = "StudentAgent"
+    self.name = "three_step_agent"
     self.autoplay = True
 
   def step(self, chess_board, player, opponent):
@@ -49,9 +54,9 @@ class three_step_Agent(Agent):
     # time_taken during your search and breaking with the best answer
     # so far when it nears 2 seconds.
     start_time = time.time()
-    time_taken = time.time() - start_time
+    
 
-    # give ourselves a buffer of 0.1 seconds to return.
+    # give ourselves a buffer of 0.001 seconds to return.
     time_limit_to_think = 1.999
 
 
@@ -59,12 +64,9 @@ class three_step_Agent(Agent):
     move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think)
 
 
-
-
-
-
-
+    time_taken = time.time() - start_time
     print("My AI's turn took ", time_taken, "seconds.")
+    
 
 
     if (move == None) :
@@ -121,6 +123,9 @@ class three_step_Agent(Agent):
         break # if we dont have time left, then we return the best we have for now
     return best_move
   def min_max_score(self, chess_board, depth, alpha, beta, max_or_nah, player, ops, start_time, time_limit):
+      
+      #### REMOVE: TO CHECK RAM USAGE
+      print('Ram USAGE (GB):', psutil.virtual_memory()[3]/1000000000 - ram_before)
       # Check if time is short and return if we dont have time anymore
       if time.time() - start_time > time_limit:
           raise TimeoutError
@@ -204,6 +209,15 @@ class three_step_Agent(Agent):
 
   def heuristic_score(self, chess_board, player, ops):
       # count the number of brown and blue, simple greedy way to evaluate, could maybe use helper, but oh well, works.. find better heuristic?
-      player_score = np.sum(chess_board == player)
-      opponent_score = np.sum(chess_board == ops)
-      return player_score - opponent_score
+              # Corner positions are highly valuable
+      corners = [(0, 0), (0, chess_board.shape[1] - 1), (chess_board.shape[0] - 1, 0), (chess_board.shape[0] - 1, chess_board.shape[1] - 1)]
+      corner_score = sum(1 for corner in corners if chess_board[corner] == color) * 10
+      corner_penalty = sum(1 for corner in corners if chess_board[corner] == 3 - color) * -10
+
+      # Mobility: the number of moves the opponent can make
+      opponent_moves = len(get_valid_moves(chess_board, 3 - color))
+      mobility_score = -opponent_moves
+
+      # Combine scores
+      total_score = player_score - opponent_score + corner_score + corner_penalty + mobility_score
+      return total_score
