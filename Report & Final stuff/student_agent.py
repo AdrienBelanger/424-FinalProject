@@ -3,13 +3,13 @@
 
 
 # Student agent: Add your own agent here 
-from agents.agent import Agent
-from store import register_agent
+from Game.agents.agent import Agent
+from Game.store import register_agent
 import sys
 import numpy as np
 from copy import deepcopy
 import time
-from helpers import random_move, count_capture, execute_move, check_endgame, get_valid_moves
+from Game.helpers import random_move, count_capture, execute_move, check_endgame, get_valid_moves
 
 @register_agent("student_agent")
 class StudentAgent(Agent):

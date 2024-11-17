@@ -24,13 +24,13 @@ Functions:
 
 
 # Student agent: Add your own agent here DONT FORGET TO REMOVE THE GAME. bcs its only for our folder structure
-from Game.agents.agent import Agent
-from Game.store import register_agent
+from agents.agent import Agent
+from store import register_agent
 import sys
 import numpy as np
 from copy import deepcopy
 import time
-from Game.helpers import random_move, count_capture, execute_move, check_endgame, get_valid_moves
+from helpers import random_move, count_capture, execute_move, check_endgame, get_valid_moves
 
 
 
