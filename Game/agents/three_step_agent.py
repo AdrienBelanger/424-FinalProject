@@ -1,29 +1,4 @@
-##### TEMP CODE UNTIL WE FINISH STUDENT AGENT #####
-
-"""
-Helpers.py is a collection of functions that primarily make up the Reversi/Othello game logic.
-Beyond a few things in the World init, which can be copy/pasted this should be almost
-all of what you'll need to simulate games in your search method.
-
-Functions:
-    get_directions    - a simple helper to deal with the geometry of Reversi moves - get the direction vectors [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)] returned
-    count_capture     - how many flips does this move make. Game logic defines valid moves as those with >0 returns from this function.    returns  int The number of stones that will be captured making this move, including all directions. Zero indicates any form of invalid move.
-    count_capture_dir - Check if placing a disc at move_pos captures any discs in the specified direction. Returns int Number of stones captured in this direction (unlikely to be used, used internally in above)
-    execute_move      - update the chess_board by simulating a move Play the move specified by altering the chess_board. Note that chess_board is a pass-by-reference in/output parameter. Consider copy.deepcopy() of the chess_board if you want to consider numerous possibilities.
-    flip_disks        - a helper for the above, unlikely to be used externally
-    check_endgame     - check for termination, who's won but also helpful to score non-terminated games     Check if the game ends and compute the final score.  Note that the game may end when a) the board is full or  b) when it's not full yet but both players are unable to make a valid move. One reason for b) occurring is when one player has no stones left. In human play this is sometimes scored as the max possible win (e.g. 64-0), but  we do not implement this scoring here and simply count the stones. Returns as a tuple of 3:  is_endgame : bool Whether the game ends. player_1_score : int  The score of player 1. player_2_score : int  The score of player 2.
-    get_valid_moves   - use this to get the children in your tree     Get all valid moves given the chess board and player. Returns valid_moves : [(tuple)] random_move       - basis of the random agent and can be used to simulate play
-   
-    
-     For all, the chess_board is an np array of integers, size nxn and integer values indicating square occupancies.
-    The current player is (1: Blue, 2: Brown), 0's in the board mean empty squares.
-    Move pos is a tuple holding [row,col], zero indexed such that valid entries are [0,board_size-1]
-"""
-
-
-
-
-# Student agent: Add your own agent here DONT FORGET TO REMOVE THE GAME. bcs its only for our folder structure
+# Student agent: Add your own agent here
 from agents.agent import Agent
 from store import register_agent
 import sys
@@ -32,15 +7,12 @@ from copy import deepcopy
 import time
 from helpers import random_move, count_capture, execute_move, check_endgame, get_valid_moves
 
-
-
-
 @register_agent("three_step_agent")
-class three_step_Agent(Agent): # student agent best agent
+class three_step_Agent(Agent):
 
   def __init__(self):
     super(three_step_Agent, self).__init__()
-    self.name = "three_step_Agent"
+    self.name = "three_step_agent"
     self.autoplay = True
 
   def step(self, chess_board, player, opponent):
@@ -80,7 +52,7 @@ class three_step_Agent(Agent): # student agent best agent
     time_taken = time.time() - start_time
 
     # give ourselves a buffer of 0.1 seconds to return.
-    time_limit_to_think = 1.9
+    time_limit_to_think = 1.99
 
 
 
@@ -148,84 +120,90 @@ class three_step_Agent(Agent): # student agent best agent
       except TimeoutError:
         break # if we dont have time left, then we return the best we have for now
     return best_move
+  def min_max_score(self, chess_board, depth, alpha, beta, max_or_nah, player, ops, start_time, time_limit):
+      # Check if time is short and return if we dont have time anymore
+      if time.time() - start_time > time_limit:
+          raise TimeoutError
 
-  def min_max_score(self, chess_board, depth , alpha, beta, max_or_nah, player, ops, start_time, time_limit):
+      # If the game has ended, calculate the score and return it
+      (is_end, p1_score, p2_score) = check_endgame(chess_board, player, ops)
+      if is_end:
+          if player == 1:
+              return p1_score - p2_score
+          else:
+              return p2_score - p1_score
 
-    if time.time() - start_time > time_limit:
-      raise TimeoutError
-    
-    (is_end, p1_score, p2_score) = check_endgame(chess_board)
+      # If we're at depth 0, end recursion and return heuristic score
+      if depth == 0:
+          return self.heuristic_score(chess_board, player, ops)
 
-    # if its the end of the game then return the score of the move
-    if (is_end) :
-      if (player == 1):
-        return p1_score - p2_score
-      else :
-        return p2_score - p1_score
-    
-    # if were at depth 0 then we end recursion
-    if depth == 0:
-      return self.heuristic_score(chess_board, player, ops)
+      # Get valid moves for the current player
+      valid_moves = get_valid_moves(chess_board, player if max_or_nah else ops)
 
-    valid_moves = get_valid_moves(chess_board, player)
+      # If no valid moves, switch turns but decrement depth
+      if len(valid_moves) == 0:
+          not_max_or_nah = not max_or_nah
+          return self.min_max_score(chess_board, depth - 1, alpha, beta, not_max_or_nah, player, ops, start_time, time_limit)
 
-    if (len(valid_moves) == 0):
-      # if we cant move were switching sides
-      not_max_or_nah = not max_or_nah
-      return self.min_max_score(chess_board, depth, alpha, beta, not_max_or_nah, player, ops, start_time, time_limit)
-    
-    # we need to know who were simulating as (max or not as this step)
-    current_player = player if max_or_nah else ops
+      # Determine the player for this step
+      current_player = player if max_or_nah else ops
 
+      # Maximizing step
+      if max_or_nah:
+          max_eval = -float('inf')
+          for move in valid_moves:
+              # Check if time is short and return if we dont have time anymore
+              if time.time() - start_time > time_limit:
+                  raise TimeoutError
 
-    valid_moves = get_valid_moves(chess_board, current_player)
+              # Try the move on a copy of the board
+              sim_board = deepcopy(chess_board)
+              execute_move(sim_board, move, current_player)
 
-    # if were maximizing, check the max step
-    if max_or_nah:
-        max_eval = -float('inf')
-        for move in valid_moves:
-            # Check if time is short and return if we dont have time anymore
-            if time.time() - start_time > time_limit:
-                raise TimeoutError
-            sim_board = deepcopy(chess_board)
-            execute_move(sim_board, move, current_player)
+              # Recur to minimize the next step
+              eval_score = self.min_max_score(sim_board, depth - 1, alpha, beta, False, player, ops, start_time, time_limit)
 
-            # reccurence, check for next layer and minimize
-            eval_score = self.min_max_score(sim_board, depth - 1, alpha, beta, False, player, ops, start_time, time_limit)
+              # Maximize the score
+              max_eval = max(max_eval, eval_score)
 
-            # maximise the score
-            max_eval = max(max_eval, eval_score)
+              # Update alpha
+              alpha = max(alpha, eval_score)
 
-            # update alpha
-            alpha = max(alpha, eval_score)
+              # Prune
+              if beta <= alpha:
+                  break
+          return max_eval
 
-            # prune
-            if beta <= alpha:
-                break
-        return max_eval
-    
-    # else were minimising.. same thing just
-    else:
-        min_eval = float('inf')
-        for move in valid_moves:
-            # Check if time is short and ....
-            if time.time() - start_time > time_limit:
-                raise TimeoutError
+      # Minimizing step
+      else:
+          min_eval = float('inf')
+          for move in valid_moves:
+              # Check if time is short and return if we dont have time anymore
+              if time.time() - start_time > time_limit:
+                  raise TimeoutError
 
-            simulated_board = deepcopy(chess_board)
-            execute_move(simulated_board, move, current_player)
+              # Try the move on a copy of the board
+              sim_board = deepcopy(chess_board)
+              execute_move(sim_board, move, current_player)
 
-            eval_score = self.min_max_score(simulated_board, depth - 1, alpha, beta, True, player, ops, start_time, time_limit)
-            min_eval = min(min_eval, eval_score)
-            beta = min(beta, eval_score)
-            if beta <= alpha:
-                break
-        return min_eval
+              # Recur to maximize the next step
+              eval_score = self.min_max_score(sim_board, depth - 1, alpha, beta, True, player, ops, start_time, time_limit)
+
+              # Minimize the score
+              min_eval = min(min_eval, eval_score)
+
+              # Update beta
+              beta = min(beta, eval_score)
+
+              # Prune
+              if beta <= alpha:
+                  break
+          return min_eval
 
 
 
-def heuristic_score(self, chess_board, player, ops):
-    # count the number of brown and blue, simple greedy way to evaluate, could maybe use helper, but oh well, works.. find better heuristic?
-    player_score = np.sum(chess_board == player)
-    opponent_score = np.sum(chess_board == ops)
-    return player_score - opponent_score
+  def heuristic_score(self, chess_board, player, ops):
+      # count the number of brown and blue, simple greedy way to evaluate, could maybe use helper, but oh well, works.. find better heuristic?
+      player_score = np.sum(chess_board == player)
+      opponent_score = np.sum(chess_board == ops)
+      return player_score - opponent_score
