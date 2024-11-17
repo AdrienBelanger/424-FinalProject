@@ -49,22 +49,19 @@ class three_step_Agent(Agent):
     # time_taken during your search and breaking with the best answer
     # so far when it nears 2 seconds.
     start_time = time.time()
-    time_taken = time.time() - start_time
+    
 
-    # give ourselves a buffer of 0.1 seconds to return.
-    time_limit_to_think = 1.99
+    # give ourselves a buffer of 0.001 seconds to return.
+    time_limit_to_think = 1.98
 
 
 
     move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think)
 
 
-
-
-
-
-
+    time_taken = time.time() - start_time
     print("My AI's turn took ", time_taken, "seconds.")
+    
 
 
     if (move == None) :
@@ -121,7 +118,7 @@ class three_step_Agent(Agent):
         break # if we dont have time left, then we return the best we have for now
     return best_move
   def min_max_score(self, chess_board, depth, alpha, beta, max_or_nah, player, ops, start_time, time_limit):
-      # Check if time is short and return if we dont have time anymore
+
       if time.time() - start_time > time_limit:
           raise TimeoutError
 
