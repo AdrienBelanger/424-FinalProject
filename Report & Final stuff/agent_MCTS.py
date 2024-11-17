@@ -73,6 +73,15 @@ class StudentAgent(Agent):
         fin, player_score, opp_score = check_endgame(CB,player,opponent)
         # evaluates move initial score
         scores[i] = player_score - opp_score
+
+    def swap_players(p,opp):
+      if p == player:
+        p = opponent
+        opp = player
+      else:
+        p = player
+        opp = opponent
+      return p, opp
         
       return scores
 
@@ -82,6 +91,20 @@ class StudentAgent(Agent):
         if state_tree[i] == state:
           return i
       return -1
+
+    def simulate_to_end(chess_board,p,q):
+      # simulates to end using random moves for both agents
+      is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
+      while not is_endgame:
+        # picks random move
+        move = random_move(chess_board,p)
+        execute_move(chess_board,move,player)
+        p,q = swap_players(p,q)
+        # checks for endgame
+        is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
+      return (p_score-oppscore) > 0
+        
+        
 
       
 
@@ -108,10 +131,13 @@ class StudentAgent(Agent):
     parent_nodes = [None]
     node_moves = [moves]
     node_score = [0]
+    node_visits = [0]
 
     while time.time() - start_time < 1.9:
       s = np.copy(chess_board)
       p = player
+      q = opponent
+      depth = 1
       
       while True:
         # checks if node has been visited
@@ -122,16 +148,25 @@ class StudentAgent(Agent):
         next_move = np.argmax(node_moves[ind])
         execute_move(s,next_move,p)
         # swaps player every node
-        if p == player:
-          p = opponent
-        else:
-          p = player
+        p,q = swap_players(p,q)
+        # updates search depth
+        depth += 1
 
       # if found node not in tree > add it
       tree_states.append(s)
       parent_nodes.append(ind)
       node_moves.append(get_move_scores(s,p))
       # runs simulation
+      victorious =  simulate_to_end(chess_board,p,q):
+      # backpropagate results
+      ind = len(tree_states) - 1
+      for d in range(depth):
+        node_visits[ind] += 1
+        if victorious: node_score += 1
+        ind = parent_nodes[ind]
+
+      # update move scores too !!!
+      
       
         
         
