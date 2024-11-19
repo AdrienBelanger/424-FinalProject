@@ -56,18 +56,22 @@ class StudentAgent(Agent):
       
 
     """
-    def get_move_scores(chess_board,player):
+    def get_base_move_scores(chess_board,player,moves):
 
-      moves = get_valid_moves(chess_board,player)
       scores = np.zeros(len(moves))
       
       for i in range(len(moves)):
         # executes move
         CB = np.copy(chess_board)
         execute_move(CB,moves[i],player)
-        fin, player_score, opp_score = check_endgame(CB,player,opponent)
+        _, player_score, opp_score = check_endgame(CB,player,opponent)
         # evaluates move initial score
         scores[i] = player_score - opp_score
+        
+      return scores
+        
+    def count_empty_spaces(chess_board):
+      return np.sum(np.equal(chess_board,0))
 
     def swap_players(p,opp):
       if p == player:
@@ -78,11 +82,9 @@ class StudentAgent(Agent):
         opp = opponent
       return p, opp
         
-      return scores
-
     def get_loc_in_tree(state_tree,state):
-
-      for i in range(len(state_tree)):
+      N = len(state_tree)
+      for i in range(N-1,-1,-1):
         if state_tree[i] == state:
           return i
       return -1
@@ -97,7 +99,10 @@ class StudentAgent(Agent):
         p,q = swap_players(p,q)
         # checks for endgame
         is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
-      return (p_score-opp_score) > 0      
+      return p_score-opp_score     
+    
+    def compute_move_scores(exploit,explore,n_prev,k):
+      return exploit + k*np.sqrt(np.log(n_prev)/explore)
 
     # Some simple code to help you with timing. Consider checking 
     # time_taken during your search and breaking with the best answer
@@ -107,56 +112,72 @@ class StudentAgent(Agent):
 
     print("My AI's turn took ", time_taken, "seconds.")
 
-    # Dummy return (you should replace this with your actual logic)
-    # Returning a random valid move as an example
+    # Step 0: initializing, clearing data struct?
+    
+    K = 1 # hyperparam for UCT 
 
     # Step 1: gets list of possible moves
-    moves = get_valid_moves(chess_board,player)
-    N = len(moves)
-    move_counts = np.zeros(N) # tracks num move uses
-    scores = np.zeros(N) # tracks move priority (higher num is better)
+    POSSIBLE_MOVES = get_valid_moves(chess_board,player)
     num_sim = 0
 
     # Step 2: searches tree
     tree_states = [chess_board] # saved as (board_state,parent_ind) pairs
-    parent_nodes = [None]
-    node_moves = [moves]
-    node_score = [0]
-    node_visits = [0]
+    node_moves = [POSSIBLE_MOVES]
+    exploit = [get_base_move_scores(chess_board,player,POSSIBLE_MOVES)]
+    explore = [np.ones(len(POSSIBLE_MOVES))] # num explorations
+    node_scores = [1] # num node visits
 
     while time.time() - start_time < 1.9:
+      
       s = np.copy(chess_board)
       p = player
       q = opponent
-      depth = 1
+      depth = 0
+      prev_node_score = 1
+      
+      node_inds = [] # backpointer to all prev explored nodes
+      move_inds = [] # backpoitner to all executed moves
       
       while True:
         # checks if node has been visited
         ind = get_loc_in_tree(tree_states,s)
         if ind == -1:
           break
+        
+        # stores backpointers as lists
+        depth += 1
+        node_inds.append(ind)
+        
         # plays best fit move
-        next_move = np.argmax(node_moves[ind])
-        execute_move(s,next_move,p)
+        cur_scores = compute_move_scores(exploit[ind],explore[ind],prev_node_score,K)
+        move_ind = np.argmax(cur_scores)
+        move_inds.append(move_ind)
+        execute_move(s,node_moves[ind][move_ind],p)
+        
         # swaps player every node
         p,q = swap_players(p,q)
-        # updates search depth
-        depth += 1
+        prev_node_score = node_scores[ind]
 
       # if found node not in tree > add it
       tree_states.append(s)
-      parent_nodes.append(ind)
-      node_moves.append(get_move_scores(s,p))
+      new_moves = get_valid_moves(s,p)
+      node_moves.append(new_moves)
+      exploit.append(get_base_move_scores(s,p,new_moves))
+      explore.append(np.ones(len(new_moves)))
+      node_scores.append(1)
+      
       # runs simulation
-      victorious =  simulate_to_end(chess_board,p,q)
+      sim_score =  simulate_to_end(chess_board,p,q)
+      
       # backpropagate results
-      ind = len(tree_states) - 1
-      for d in range(depth):
-        node_visits[ind] += 1
-        if victorious: node_score += 1
-        ind = parent_nodes[ind]
+      for d in range(depth): 
+        ind = node_inds[depth-1-d]              # retrieves prev node explored in path
+        node_scores[ind] += 1                   # updates node score by 1
+        move_ind = move_inds[depth-1-d]         # retrieves move index in list
+        explore[ind][move_ind] += 1             # explore score increases by 1
+        exploit[ind][move_ind] += sim_score     # exploits score increases by win magnitude
 
-      # update move scores too !!!
+      num_sim += 1
     
-    best_move = np.argmax(node_moves[0])
-    return moves[best_move]
+    best_move = np.argmax(exploit[0]) # final decision? only exploit or also explore?
+    return POSSIBLE_MOVES[best_move]
