@@ -97,11 +97,7 @@ class StudentAgent(Agent):
         p,q = swap_players(p,q)
         # checks for endgame
         is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
-      return (p_score-opp_score) > 0
-        
-        
-
-      
+      return (p_score-opp_score) > 0      
 
     # Some simple code to help you with timing. Consider checking 
     # time_taken during your search and breaking with the best answer
@@ -161,9 +157,6 @@ class StudentAgent(Agent):
         ind = parent_nodes[ind]
 
       # update move scores too !!!
-      
     
-
-
-    
-    return random_move(chess_board,player)
+    best_move = np.argmax(node_moves[0])
+    return moves[best_move]
