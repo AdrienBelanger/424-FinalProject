@@ -236,5 +236,3 @@ def count_empty_spots_and_dimensions(chess_board):
                 count += 1
     return (count, (x, y))
       
-
-def mcts_give_me_ur_best_move(): return None
