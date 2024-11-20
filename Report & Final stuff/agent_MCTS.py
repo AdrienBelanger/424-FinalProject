@@ -108,11 +108,11 @@ class StudentAgent(Agent):
     # time_taken during your search and breaking with the best answer
     # so far when it nears 2 seconds.
     start_time = time.time()
-    time_taken = time.time() - start_time
-
-    print("My AI's turn took ", time_taken, "seconds.")
-
-    # Step 0: initializing, clearing data struct?
+    
+    # Step 0: choose appropriate running mode
+    num_empty = count_empty_spaces(chess_board)
+    
+    # based on num empty spots >> 3 diff phases
     
     K = 1 # hyperparam for UCT 
 
@@ -159,12 +159,15 @@ class StudentAgent(Agent):
         prev_node_score = node_scores[ind]
 
       # if found node not in tree > add it
-      tree_states.append(s)
       new_moves = get_valid_moves(s,p)
-      node_moves.append(new_moves)
-      exploit.append(get_base_move_scores(s,p,new_moves))
-      explore.append(np.ones(len(new_moves)))
-      node_scores.append(1)
+      
+      # if no moves left >> doesn't add to struct
+      if new_moves is not None:
+        tree_states.append(s)
+        node_moves.append(new_moves)
+        exploit.append(get_base_move_scores(s,p,new_moves))
+        explore.append(np.ones(len(new_moves)))
+        node_scores.append(1)
       
       # runs simulation
       sim_score =  simulate_to_end(chess_board,p,q)
@@ -179,5 +182,6 @@ class StudentAgent(Agent):
 
       num_sim += 1
     
+    print(f"Agent ran {num_sim} simulations.")
     best_move = np.argmax(exploit[0]) # final decision? only exploit or also explore?
     return POSSIBLE_MOVES[best_move]
