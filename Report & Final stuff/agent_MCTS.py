@@ -95,7 +95,7 @@ class StudentAgent(Agent):
       while not is_endgame:
         # picks random move
         move = random_move(chess_board,p)
-        execute_move(chess_board,move,player)
+        execute_move(chess_board,move,p)
         p,q = swap_players(p,q)
         # checks for endgame
         is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
