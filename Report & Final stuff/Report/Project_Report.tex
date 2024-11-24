@@ -1,18 +1,30 @@
 \documentclass[12pt, letterpaper]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage{titling} % to make title higher
+\usepackage[margin=1in, top=0.6in]{geometry}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{titling}
 \usepackage{enumitem}
-\usepackage{ragged2e} % justification
-\usepackage{comment} % for commenting out multiple lines
-
-
-\title{Project Report \\ \large Comp 424}
-\author{Adrien Bélanger, Domenico Bonilla}
-\date{22\textsuperscript{nd} of November}
+\usepackage{ragged2e}
+\usepackage{comment}
+\usepackage[
+backend=biber,
+style=ieee,
+sorting=none,
+]{biblatex}
+\addbibresource{final_bibliography.bib}
 
 \begin{document}
 
-\maketitle
+\begin{titlepage}
+    \centering
+    \vspace*{2in}
+    {\LARGE \textbf{Final Report}}\\
+    \vspace*{0.5in}
+    {\large COMP 424 Final Project}\\[4in]
+    \normalsize
+    By Domenico Bonilla Marcello and Adrien Bélanger\\ [3em]
+    December 13$^{\text{th}}$ 2024
+\end{titlepage}
 
 \subsubsection*{Executive Summary: 5/50}
     
@@ -61,6 +73,8 @@
 
 %(Conditional) If you have used a significant input source including an LLM, Stack Overflow, past years' 424 code or a tutorial on game playing agents, you must describe that input in up to 1 extra page. For ChatGPT, provide the first parts of the prompt you used and outline how it was created. In all cases, describe what elements of your solution are exact duplicates of the input source and describe the changes you've made on top of these.
 
+
+\pagebreak
 
 
 \end{document}
