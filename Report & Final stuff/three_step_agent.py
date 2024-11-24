@@ -80,7 +80,7 @@ class three_step_Agent(Agent):
     # Returning a random valid move as an example
     return move
 
-  def min_max_give_me_ur_best_move(self, chess_board, player, start_time, time_limit):
+  def min_max_give_me_ur_best_move(self, chess_board, player, start_time, time_limit, score_function):
     chess_board_dimensions = np.shape(chess_board)
     ops = 3 - player 
     
@@ -106,7 +106,7 @@ class three_step_Agent(Agent):
             # try the move
             execute_move(sim_board, move, player)
 
-            eval_score = self.min_max_score(sim_board, depth - 1, alpha, beta, False, player, ops, start_time, time_limit)
+            eval_score = self.min_max_score(sim_board, depth - 1, alpha, beta, False, player, ops, start_time, time_limit, score_function)
 
             if eval_score > best_score:
               best_score = eval_score
@@ -130,7 +130,7 @@ class three_step_Agent(Agent):
       except TimeoutError:
         break # if we dont have time left, then we return the best we have for now
     return best_move
-  def min_max_score(self, chess_board, depth, alpha, beta, max_or_nah, player, ops, start_time, time_limit):
+  def min_max_score(self, chess_board, depth, alpha, beta, max_or_nah, player, ops, start_time, time_limit, score_function):
 
       if time.time() - start_time > time_limit:
           raise TimeoutError
@@ -145,7 +145,7 @@ class three_step_Agent(Agent):
 
       # If we're at depth 0, end recursion and return heuristic score
       if depth == 0:
-          return self.heuristic_score(chess_board, player, ops)
+          return self.score_function(chess_board, player, ops)
 
       # Get valid moves for the current player
       valid_moves = get_valid_moves(chess_board, player if max_or_nah else ops)
@@ -153,7 +153,7 @@ class three_step_Agent(Agent):
       # If no valid moves, switch turns but decrement depth
       if len(valid_moves) == 0:
           not_max_or_nah = not max_or_nah
-          return self.min_max_score(chess_board, depth - 1, alpha, beta, not_max_or_nah, player, ops, start_time, time_limit)
+          return self.min_max_score(chess_board, depth - 1, alpha, beta, not_max_or_nah, player, ops, start_time, time_limit, score_function)
 
       # Determine the player for this step
       current_player = player if max_or_nah else ops
@@ -166,11 +166,9 @@ class three_step_Agent(Agent):
               if time.time() - start_time > time_limit:
                   raise TimeoutError
 
-              # Try the move on a copy of the board
               sim_board = deepcopy(chess_board)
               execute_move(sim_board, move, current_player)
 
-              # Recur to minimize the next step
               eval_score = self.min_max_score(sim_board, depth - 1, alpha, beta, False, player, ops, start_time, time_limit)
 
               # Maximize the score
@@ -192,11 +190,9 @@ class three_step_Agent(Agent):
               if time.time() - start_time > time_limit:
                   raise TimeoutError
 
-              # Try the move on a copy of the board
               sim_board = deepcopy(chess_board)
               execute_move(sim_board, move, current_player)
 
-              # Recur to maximize the next step
               eval_score = self.min_max_score(sim_board, depth - 1, alpha, beta, True, player, ops, start_time, time_limit)
 
               # Minimize the score
@@ -212,11 +208,86 @@ class three_step_Agent(Agent):
 
 
 # definitely need to improve this heuristic
-  def heuristic_score(self, chess_board, player, ops):
+  def greedy_score(self, chess_board, player, ops):
       # count the number of brown and blue, simple greedy way to evaluate, could maybe use helper, but oh well, works.. find better heuristic?
       player_score = np.sum(chess_board == player)
       opponent_score = np.sum(chess_board == ops)
       return player_score - opponent_score
+
+
+# score function from ./gpt_greedy_corners.py
+  def gpt_score(self, chess_board, player, ops):
+      # Player and opponent scores
+      player_score = np.sum(chess_board == player)
+      opponent_score = np.sum(chess_board == ops)
+
+      # Corner positions are highly valuable
+      corners = [(0, 0), (0, chess_board.shape[1] - 1), 
+                (chess_board.shape[0] - 1, 0), 
+                (chess_board.shape[0] - 1, chess_board.shape[1] - 1)]
+      corner_score = sum(1 for corner in corners if chess_board[corner] == player) * 10
+      corner_penalty = sum(1 for corner in corners if chess_board[corner] == ops) * -10
+
+      # Mobility: the number of moves the opponent can make
+      opponent_moves = len(get_valid_moves(chess_board, ops))
+      mobility_score = -opponent_moves
+
+      # Combine scores
+      total_score = player_score - opponent_score + corner_score + corner_penalty + mobility_score
+      return total_score
+
+
+# Inspired by the corner heuristic, which led to https://kartikkukreja.wordpress.com/2013/03/30/heuristic-function-for-reversiothello/
+  def stability_score(self, chess_board, player, ops):
+    board_size = chess_board.shape[0]
+
+    def generate_weights(size):
+        # make the whole board zeros
+        weights = np.zeros((size, size))
+        
+        # corners are really valuable, give them a weight of 4
+        corners = [(0, 0), (0, size - 1), (size - 1, 0), (size - 1, size - 1)]
+        for corner in corners:
+            weights[corner] = 4
+        
+        # Values next to corners are really weak
+        adjacent = [
+            (0, 1), (1, 0), (1, 1),
+            (0, size - 2), (1, size - 1), (1, size - 2),
+            (size - 2, 0), (size - 1, 1), (size - 2, 1),
+            (size - 2, size - 1), (size - 1, size - 2), (size - 2, size - 2)
+        ]
+
+        # bad values next to corners
+        for adj in adjacent:
+            weights[adj] = -3
+        
+        # assign values on top rows that are not adjacent to corners high values
+        for i in range(1, size - 1):
+            weights[0, i] = 2  # Top
+            weights[size - 1, i] = 2  # Bottom
+            weights[i, 0] = 2  # Left
+            weights[i, size - 1] = 2  # Right
+
+        # rest is low value
+        for i in range(1, size - 1):
+            for j in range(1, size - 1):
+                if weights[i, j] == 0:
+                    weights[i, j] = 1 if (i + j) % 2 == 0 else -1
+        
+        return weights
+
+    weights = generate_weights(board_size)
+
+    # Calculate the stability score
+    stability_score = np.sum(weights[chess_board == player]) - np.sum(weights[chess_board == ops])
+
+    # greedy score
+    player_score = np.sum(chess_board == player)
+    opponent_score = np.sum(chess_board == ops)
+
+
+    return stability_score + 0.5 * (player_score - opponent_score)
 
 
 def mcts_give_me_ur_best_move(chess_board, player, start_time, time_limit):
