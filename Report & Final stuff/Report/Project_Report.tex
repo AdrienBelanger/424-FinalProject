@@ -1,12 +1,80 @@
 \documentclass[12pt, letterpaper]{article}
-\usepackage[margin=1in]{geometry}
-
-\title{Project Report \\ \large Comp 424}
-\author{Adrien Bélanger, Domenico Bonilla}
-\date{22\textsuperscript{nd} of November}
+\usepackage[margin=1in, top=0.6in]{geometry}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{titling}
+\usepackage{enumitem}
+\usepackage{ragged2e}
+\usepackage{comment}
+\usepackage[
+backend=biber,
+style=ieee,
+sorting=none,
+]{biblatex}
+\addbibresource{final_bibliography.bib}
 
 \begin{document}
 
-\maketitle
+\begin{titlepage}
+    \centering
+    \vspace*{2in}
+    {\LARGE \textbf{Final Report}}\\
+    \vspace*{0.5in}
+    {\large COMP 424 Final Project}\\[4in]
+    \normalsize
+    By Domenico Bonilla Marcello and Adrien Bélanger\\ [3em]
+    December 13$^{\text{th}}$ 2024
+\end{titlepage}
+
+\subsubsection*{Executive Summary: 5/50}
+    
+    What is the strongest algorithm you found to play Reversi? 
+    A brief overall motivation or executive summary for the best approach. 
+    Skip details but give the reader and overview of what parts of 
+    the method are most important to achieve strong performance, 
+    what play quality you think you achieved and how you came to 
+    these conclusions (math/algorithm analysis, iterative design, 
+    reading sources, etc).
+    
+
+
+
+\subsubsection*{Detailed explanation: 15/50}
+    
+    A detailed explanation of your agent design, including a re-statement of any relevant general 
+    theoretical elements and algorithms (with citations), as well as specific details about
+    how each of these maps to our game. Do not copy your code into this section, 
+    rather use English to describe code elements and data structures where they're 
+    relevant  (roughly 2 pages).
+    
+
+\subsubsection*{Quantitative Analysis: 15/50}
+    
+        Analyze your agent's quantitative performance using  criteria we mentioned in class. For each, state a numerical quantity or formula and give a 3-4 line text explanation (overall 1 page):
+        \begin{enumerate}
+            \item What \textbf{depth} (a.k.a. look-ahead) level does your agent achieve  board? Is it the same for all branches, or deeper in some cases than others? List elements of your approach that dealt with search depth.
+            \item What \textbf{breadth} does your agent achieve? That is, how many moves do you consider at each level of play? Is this the same or different for the max and min player? Does your approach address move ordering, pruning or  depth-first elements that may reduce the breadth?
+            \item What impact does board size have on your method (in particular, its look-ahead and search breadth, as listed above). Did you customize or analysis any method elements based on the board's size?
+            \item List the heuristics, pruning methods and move ordering approaches you tried, if any. Comment on the impact of each and why some were stronger than others.
+            \item Predict your win-rates in the evaluation, against: (i) The random agent, (ii) Dave (an average human player), and (iii) your classmates' agents.
+        \end{enumerate}
+    
+\subsubsection*{Pros/cons of Chosen Approach (combined with description of other methods tried, if present): 5/50}
+    
+    A summary of the advantages and disadvantages of your approach, expected failure modes, or weaknesses of your program. (half page)
+    
+\subsubsection*{Future Improvements: 5/50}
+
+    A brief description of how you would go about further improving your player (e.g. by introducing other AI techniques, changing internal representation etc.) These can be ideas you conceived but ran out of time to implement (one page)
+
+
+%%%%% if we used LLM or Not our own code
+
+
+%(Conditional) If you have used a significant input source including an LLM, Stack Overflow, past years' 424 code or a tutorial on game playing agents, you must describe that input in up to 1 extra page. For ChatGPT, provide the first parts of the prompt you used and outline how it was created. In all cases, describe what elements of your solution are exact duplicates of the input source and describe the changes you've made on top of these.
+
+
+\pagebreak
+
 
 \end{document}
