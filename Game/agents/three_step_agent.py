@@ -218,10 +218,111 @@ class three_step_Agent(Agent):
       opponent_score = np.sum(chess_board == ops)
       return player_score - opponent_score
 
+  def mcts_give_me_ur_best_move(chess_board, player, start_time, time_limit):
+      def get_base_move_scores(chess_board, player, moves):
+          scores = np.zeros(len(moves))
+          for i in range(len(moves)):
+              CB = np.copy(chess_board)
+              execute_move(CB, moves[i], player)
+              _, player_score, opp_score = check_endgame(CB, player, 3 - player)
+              scores[i] = player_score - opp_score
+          return scores
 
-def mcts_give_me_ur_best_move(chess_board, player, start_time, time_limit):
-   return None
+      def count_empty_spaces(chess_board):
+          return np.sum(chess_board == 0)
 
+      def swap_players(p, opp):
+          return (3 - p, p)
+
+      def get_loc_in_tree(state_tree, state):
+          for i in range(len(state_tree) - 1, -1, -1):
+              if np.array_equal(state_tree[i], state):
+                  return i
+          return -1
+
+      def simulate_to_end(chess_board, p, q):
+          is_endgame, p_score, opp_score = check_endgame(chess_board, p, q)
+          while not is_endgame:
+              move = random_move(chess_board, p)
+              execute_move(chess_board, move, p)
+              p, q = swap_players(p, q)
+              is_endgame, p_score, opp_score = check_endgame(chess_board, p, q)
+          return p_score - opp_score
+
+      def compute_move_scores(exploit, explore, n_prev, k):
+          return exploit + k * np.sqrt(np.log(n_prev) / explore)
+
+      opponent = 3 - player
+      K = 1  # Hyperparameter for UCT
+      POSSIBLE_MOVES = get_valid_moves(chess_board, player)
+
+      tree_states = [chess_board]
+      node_moves = [POSSIBLE_MOVES]
+      exploit = [get_base_move_scores(chess_board, player, POSSIBLE_MOVES)]
+      explore = [np.ones(len(POSSIBLE_MOVES))]
+      node_scores = [1]
+      num_sim = 0
+
+      while time.time() - start_time < time_limit:
+          s = np.copy(chess_board)
+          p = player
+          q = opponent
+          depth = 0
+          prev_node_score = 1
+
+          node_inds = []
+          move_inds = []
+
+          while True:
+              ind = get_loc_in_tree(tree_states, s)
+              if ind == -1:
+                  break
+
+              depth += 1
+              node_inds.append(ind)
+              cur_scores = compute_move_scores(exploit[ind], explore[ind], prev_node_score, K)
+              move_ind = np.argmax(cur_scores)
+              move_inds.append(move_ind)
+              execute_move(s, node_moves[ind][move_ind], p)
+              p, q = swap_players(p, q)
+              prev_node_score = node_scores[ind]
+
+          new_moves = get_valid_moves(s, p)
+          if new_moves is not None:
+              tree_states.append(s)
+              node_moves.append(new_moves)
+              exploit.append(get_base_move_scores(s, p, new_moves))
+              explore.append(np.ones(len(new_moves)))
+              node_scores.append(1)
+
+          sim_score = simulate_to_end(chess_board, p, q)
+          for d in range(depth):
+              ind = node_inds[depth - 1 - d]
+              node_scores[ind] += 1
+              move_ind = move_inds[depth - 1 - d]
+              explore[ind][move_ind] += 1
+              exploit[ind][move_ind] += sim_score
+
+          num_sim += 1
+
+      best_move = np.argmax(exploit[0])
+      return POSSIBLE_MOVES[best_move]
+
+
+
+  def count_empty_spots_and_dimensions(chess_board):
+      count = 0
+      spots = 0
+      for i in range(np.shape(chess_board)[0]):
+          x +=1
+          spots +=1
+          for j in range(np.shape(chess_board)[1]):
+              y +=1
+              spots +=1
+              if chess_board[i][j] == 0:
+                  count += 1
+      return (count, (x, y))
+      
 
 def count_empty_spots_and_dimensions(chess_board):
     count = 0
@@ -236,3 +337,8 @@ def count_empty_spots_and_dimensions(chess_board):
                 count += 1
     return (count, (x, y))
       
+import numpy as np
+import time
+from copy import deepcopy
+from helpers import random_move, count_capture, execute_move, check_endgame, get_valid_moves
+
