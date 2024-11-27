@@ -142,15 +142,15 @@ class three_step_Agent(Agent):
     
     if (empty_spots < third_step):
         time_limit_to_think = 1.995
-        print('Going for greedy min max')
+        print('Using greedy min max')
         move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, self.greedy_score)
     elif (empty_spots < second_step):
         time_limit_to_think = 1.995
-        print('Going for stable min max')
+        print('Using stability min max')
         move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, self.stability_score)
     else: # First step
         time_limit_to_think = 1.97
-        print('Going for MCTS')
+        print('Using MCTS')
         move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think)
 
 
@@ -438,7 +438,7 @@ class three_step_Agent(Agent):
         explore[ind][move_ind] += 1             # explore score increases by 1
         exploit[ind][move_ind] += sim_score     # exploits score increases by win magnitude
 
-      num_sim += 1
+      num_sim += 1 # Nice
     
     print(f"Agent ran {num_sim} simulations.")
     best_move = np.argmax(exploit[0]) # final decision? only exploit or also explore?
