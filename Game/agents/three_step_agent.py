@@ -131,33 +131,39 @@ class three_step_Agent(Agent):
     chess_board = deepcopy(chess_board)
 
    
-    # give ourselves a buffer of 0.001 seconds to return.
-    time_limit_to_think = 1.98
+    # give ourselves a buffer to return.
+    
 
     # Start with mcts, then min_max when less empty spots
-    max_empty_spots = 20
+    third_step = 30
+    second_step = 60
     empty_spots = np.sum(chess_board == 0)
-
-    if (empty_spots < max_empty_spots):
-      print('Going for min max')
-      move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, self.stability_score)
-    else:
-      print('Going for MCTS')
-      move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think)
+    print(f"empty_spots: {empty_spots}")
     
+    if (empty_spots < third_step):
+        time_limit_to_think = 1.995
+        print('Going for greedy min max')
+        move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, self.greedy_score)
+    elif (empty_spots < second_step):
+        time_limit_to_think = 1.995
+        print('Going for stable min max')
+        move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, self.stability_score)
+    else: # First step
+        time_limit_to_think = 1.97
+        print('Going for MCTS')
+        move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think)
 
 
 
-
-    time_taken = time.time() - start_time
-    print("My AI's turn took ", time_taken, "seconds.")
-    
 
 
     if (move == None) :
       print('smt went wrong and we didn\'t find a move :( giving random move...')
       move = random_move(chess_board,player)
-
+    
+    time_taken = time.time() - start_time
+    print("My AI's turn took ", time_taken, "seconds.")
+    
     # Dummy return (you should replace this with your actual logic)
     # Returning a random valid move as an example
     return move
@@ -167,7 +173,7 @@ class three_step_Agent(Agent):
     ops = 3 - player 
     
     valid_moves = get_valid_moves(chess_board, player)
-    print("VALID MOVES:", len(valid_moves))
+    #print("VALID MOVES:", len(valid_moves))
     best_move = None
     best_score = -float('inf')
 
@@ -176,6 +182,7 @@ class three_step_Agent(Agent):
 
      # start at depth 1
     depth = 1
+    max_depth = 1
     # We want to do IDS with time search, with a buffer of maybe 0.1 seconds to make sure we return so
     while True : 
       try: 
@@ -203,6 +210,7 @@ class three_step_Agent(Agent):
             
           # (outside the for loop) augment depth for IDS
           depth += 1
+          max_depth +=1
           #print("Current depth:", depth)
           if(depth > chess_board_dimensions[0] * chess_board_dimensions[1]): break
           
@@ -210,6 +218,7 @@ class three_step_Agent(Agent):
 
 
       except TimeoutError:
+        print(max_depth)
         break # if we dont have time left, then we return the best we have for now
     return best_move
   def min_max_score(self, chess_board, depth, alpha, beta, max_or_nah, player, ops, start_time, time_limit, score_function):
@@ -248,7 +257,7 @@ class three_step_Agent(Agent):
               if time.time() - start_time > time_limit:
                   raise TimeoutError
 
-              sim_board = deepcopy(chess_board)
+              sim_board = chess_board
               execute_move(sim_board, move, current_player)
 
               eval_score = self.min_max_score(sim_board, depth - 1, alpha, beta, False, player, ops, start_time, time_limit, score_function)
@@ -272,7 +281,7 @@ class three_step_Agent(Agent):
               if time.time() - start_time > time_limit:
                   raise TimeoutError
 
-              sim_board = deepcopy(chess_board)
+              sim_board = chess_board
               execute_move(sim_board, move, current_player)
 
               eval_score = self.min_max_score(sim_board, depth - 1, alpha, beta, True, player, ops, start_time, time_limit, score_function)
@@ -297,7 +306,7 @@ class three_step_Agent(Agent):
       
       for i in range(len(moves)):
         # executes move
-        CB = np.copy(chess_board)
+        CB = chess_board
         execute_move(CB,moves[i],player)
         _, player_score, opp_score = check_endgame(CB,player,opponent)
         # evaluates move initial score
@@ -335,7 +344,7 @@ class three_step_Agent(Agent):
             # print(f"No valid moves left for player {player}.") ADRIEN: Spammed at this point
             break
         move = valid_moves[np.random.randint(len(valid_moves))]
-        chess_board = np.copy(chess_board)
+        
         execute_move(chess_board,move,p)
         p,q = swap_players(p,q)
         # checks for endgame
@@ -362,7 +371,7 @@ class three_step_Agent(Agent):
     num_sim = 0
 
     # Step 2: searches tree
-    tree_states = [np.copy(chess_board)] # saved as (board_state,parent_ind) pairs ## Adrien: Use np copy so we dont accidentally play the move
+    tree_states = [chess_board] # saved as (board_state,parent_ind) pairs ## Adrien: Use np copy so we dont accidentally play the move
     node_moves = [POSSIBLE_MOVES]
     exploit = [get_base_move_scores(chess_board,player,POSSIBLE_MOVES)]
     explore = [np.ones(len(POSSIBLE_MOVES))] # num explorations
