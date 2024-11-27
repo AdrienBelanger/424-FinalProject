@@ -138,7 +138,7 @@ class three_step_Agent(Agent):
     third_step = 30
     second_step = 60
     empty_spots = np.sum(chess_board == 0)
-    print(f"empty_spots: {empty_spots}")
+    # print(f"empty_spots: {empty_spots}") :: Debugging
     
     if (empty_spots < third_step):
         time_limit_to_think = 1.995
