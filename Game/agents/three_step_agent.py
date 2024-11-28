@@ -258,7 +258,7 @@ class three_step_Agent(Agent):
 
       # Maximizing step
       if max_or_nah:
-          max_eval = -float('inf')
+          max_eval = 0
           for move in valid_moves:
               # Check if time is short and return if we dont have time anymore
               if time.time() - start_time > time_limit:
@@ -282,7 +282,7 @@ class three_step_Agent(Agent):
 
       # Minimizing step
       else:
-          min_eval = float('inf')
+          min_eval = 0
           for move in valid_moves:
               # Check if time is short and return if we dont have time anymore
               if time.time() - start_time > time_limit:
@@ -340,23 +340,29 @@ class three_step_Agent(Agent):
           return i
       return -1
 
-    def simulate_to_end(chess_board,p,q):
+    def simulate_to_end(chess_board,p,q,num_sim):
+      total_sim_score = 0
       # simulates to end using random moves for both agents
-      is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
-      while not is_endgame:
-        # picks random move
-        valid_moves = get_valid_moves(chess_board,p) #### ADRIEN: Added choice with valid move since it returned empty
-        # print(valid_moves) ADRIEN:  For debugging
-        if len(valid_moves) == 0:
-            # print(f"No valid moves left for player {player}.") ADRIEN: Spammed at this point
-            p,q = swap_players(p,q)
-        move = valid_moves[np.random.randint(len(valid_moves))]
-        
-        execute_move(chess_board,move,p)
-        p,q = swap_players(p,q)
-        # checks for endgame
-        is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
-      return p_score-opp_score     
+      for sim in range(num_sim):
+        chess_board_sim = np.copy(chess_board)
+        is_endgame, p_score, opp_score = check_endgame(chess_board_sim,player,opponent)
+        while not is_endgame:
+          # picks random move
+          valid_moves = get_valid_moves(chess_board_sim,p) #### ADRIEN: Added choice with valid move since it returned empty
+          valid_moves_ops = get_valid_moves(chess_board_sim,q)
+          if len(valid_moves) == 0 and len(valid_moves_ops) ==0:
+            break
+          # print(valid_moves) ADRIEN:  For debugging
+          if len(valid_moves) == 0:
+              # print(f"No valid moves left for player {player}.") ADRIEN: Spammed at this point
+              p,q = swap_players(p,q)
+          move = random_move(chess_board_sim,p)
+          execute_move(chess_board_sim,move,p)
+          p,q = swap_players(p,q)
+          # checks for endgame
+          is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
+        total_sim_score = p_score - opp_score
+      return total_sim_score / num_sim     
     
     def compute_move_scores(exploit,explore,n_prev,k):
       return exploit + k*np.sqrt(np.log(n_prev)/explore)
@@ -372,6 +378,7 @@ class three_step_Agent(Agent):
     # based on num empty spots >> 3 diff phases
     
     K = 1 # hyperparam for UCT 
+    NUM_SIM_PER_NODE = 10
 
     # Step 1: gets list of possible moves
     POSSIBLE_MOVES = get_valid_moves(chess_board,player)
@@ -435,9 +442,10 @@ class three_step_Agent(Agent):
         parent_nodes.append(node_inds[-1] if node_inds else -1) ### Add to parent node, right now we arent
 
       # runs simulation
-      sim_score =  simulate_to_end(s,p,q) ### ADRIEN: Simulate starting at the current state, not at the Chessboard
+      sim_score =  simulate_to_end(s,p,q, NUM_SIM_PER_NODE) ### ADRIEN: Simulate starting at the current state, not at the Chessboard
       
       # backpropagate results
+      print(f"max_depth: {depth}")
       for d in range(depth): 
         ind = node_inds[depth-1-d]              # retrieves prev node explored in path
         node_scores[ind] += 1                   # updates node score by 1
@@ -448,5 +456,5 @@ class three_step_Agent(Agent):
       num_sim += 1 # Nice
     
     print(f"Agent ran {num_sim} simulations.")
-    best_move = np.argmax(exploit[0]) # final decision? only exploit or also explore?
+    best_move = np.argmax(explore[0]) # final decision? only exploit or also explore?
     return POSSIBLE_MOVES[best_move]
