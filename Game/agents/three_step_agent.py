@@ -40,8 +40,9 @@ class three_step_Agent(Agent):
 
   def mobility_score (self, chess_board, player, ops):
         opponent_moves = len(get_valid_moves(chess_board, ops))
-        mobility_score = -opponent_moves
-        return mobility_score + player_score - opponent_score
+        p_moves = len(get_valid_moves(chess_board, player))
+        mobility_score = p_moves - opponent_moves
+        return mobility_score
 
 # Inspired by the corner heuristic, which led to https://kartikkukreja.wordpress.com/2013/03/30/heuristic-function-for-reversiothello/
   def stability_score(self, chess_board, player, ops):
@@ -89,19 +90,25 @@ class three_step_Agent(Agent):
     return stability_score
   
   def ultimate_heuristic(self,chessboard,player,ops):
-     stability_score = self.stability_score(chessboard, player, ops)
+     stability_score = int(self.stability_score(chessboard, player, ops))
      mobility_score = self.mobility_score(chessboard, player, ops)
      corner_score = self.corner_score(chessboard, player, ops)
      greedy_score = self.greedy_score(chessboard,player,ops)
-
-
-     print(f"stability: {stability_score}, mobility_score: {mobility_score}, corner_score: {corner_score}, greedy_score: {greedy_score}")
-     s = 1
-     m = 1
-     c = 1
-     g = 1
-
-     return s * stability_score + m * mobility_score + c * corner_score + g * greedy_score
+    
+     num_empty_spots = np.sum(chessboard == 0)
+     '''
+        NUM_SIM_PER_NODE = int(num_sim_per_node * (treshold / num_empty_spots))
+    if NUM_SIM_PER_NODE >= 1: NUM_SIM_PER_NODE 
+    else: NUM_SIM_PER_NODE = 1
+     '''
+     
+     s = int( 2 *  (1 - (num_empty_spots/30)))
+     m = int( 10 *  (1 - (num_empty_spots/30)))
+     c = int( 10 *  ((num_empty_spots/30)))
+     g = int( 100 *  ((num_empty_spots/30)))
+     total = s * stability_score + m * mobility_score + c * corner_score + g * greedy_score
+     print(f"stability: {s * stability_score}, mobility_score: {m * mobility_score}, corner_score: {c * corner_score}, greedy_score: {g * greedy_score} giving total of: {total}")
+     return total
 
   def step(self, chess_board, player, opponent):
     """
@@ -154,9 +161,9 @@ class three_step_Agent(Agent):
         print('Using greedy min max')
         move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, self.ultimate_heuristic)
     else: # First step MCTS
-        time_limit_to_think = 1.97 # MCTS needs more time to return
+        time_limit_to_think = 1.95 # MCTS needs more time to return
         print('Using MCTS')
-        move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, num_sim_per_node=10, num_empty_spots=empty_spots, treshold=third_step)
+        move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, num_sim_per_node=10, num_empty_spots=empty_spots, treshold=second_step)
 
 
 
@@ -174,7 +181,6 @@ class three_step_Agent(Agent):
     return move
 
   def min_max_give_me_ur_best_move(self, chess_board, player, start_time, time_limit, score_function):
-    chess_board_dimensions = np.shape(chess_board)
     ops = 3 - player 
     
     valid_moves = get_valid_moves(chess_board, player)
@@ -217,7 +223,7 @@ class three_step_Agent(Agent):
           depth += 1
           max_depth +=1
           
-          if(depth > chess_board_dimensions[0] * chess_board_dimensions[1]): break
+          if(depth > np.sum(chess_board == 0)): break
           
           
 
