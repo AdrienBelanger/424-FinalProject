@@ -7,12 +7,12 @@ from copy import deepcopy
 import time
 from helpers import random_move, count_capture, execute_move, check_endgame, get_valid_moves
 
-@register_agent("three_step_agent")
-class three_step_Agent(Agent):
+@register_agent("three_step_agent_ops")
+class three_step_agent_ops(Agent):
 
   def __init__(self):
-    super(three_step_Agent, self).__init__()
-    self.name = "three_step_agent"
+    super(three_step_agent_ops, self).__init__()
+    self.name = "three_step_agent_ops"
     self.autoplay = True
 
 
@@ -448,5 +448,5 @@ class three_step_Agent(Agent):
       num_sim += 1 # Nice
     
     print(f"Agent ran {num_sim} simulations.")
-    best_move = np.argmax(exploit[0]) # final decision? only exploit or also explore?
+    best_move = np.argmax(explore[0]) # final decision? only exploit or also explore?
     return POSSIBLE_MOVES[best_move]
