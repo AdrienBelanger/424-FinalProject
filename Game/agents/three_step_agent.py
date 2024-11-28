@@ -44,6 +44,12 @@ class three_step_Agent(Agent):
       total_score = player_score - opponent_score + corner_score + corner_penalty + mobility_score
       return total_score
 
+  def mobility_score_and_greedy (self, chess_board, player, ops):
+        player_score = np.sum(chess_board == player)
+        opponent_score = np.sum(chess_board == ops)
+        opponent_moves = len(get_valid_moves(chess_board, ops))
+        mobility_score = -opponent_moves
+        return mobility_score + player_score - opponent_score
 
 # Inspired by the corner heuristic, which led to https://kartikkukreja.wordpress.com/2013/03/30/heuristic-function-for-reversiothello/
   def stability_score(self, chess_board, player, ops):
@@ -132,14 +138,15 @@ class three_step_Agent(Agent):
 
    
     # give ourselves a buffer to return.
-    
 
     # Start with mcts, then min_max when less empty spots
-    third_step = 30
-    second_step = 60
+    third_step = 10
+    second_step = 30
     empty_spots = np.sum(chess_board == 0)
-    # print(f"empty_spots: {empty_spots}") :: Debugging
+    print(f"empty_spots: {empty_spots}")
     
+    ### Might wanna go with len(possible_moves), instead of the number of plays remaining --- nvm doesnt work great
+    #print(f"Valid moves amount: {len(get_valid_moves(chess_board, player))}")
     if (empty_spots < third_step):
         time_limit_to_think = 1.995
         print('Using greedy min max')
@@ -148,8 +155,8 @@ class three_step_Agent(Agent):
         time_limit_to_think = 1.995
         print('Using stability min max')
         move = self.min_max_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, self.stability_score)
-    else: # First step
-        time_limit_to_think = 1.97
+    else: # First step MCTS
+        time_limit_to_think = 1.97 # MCTS needs more time to return
         print('Using MCTS')
         move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think)
 
@@ -211,14 +218,14 @@ class three_step_Agent(Agent):
           # (outside the for loop) augment depth for IDS
           depth += 1
           max_depth +=1
-          #print("Current depth:", depth)
+          
           if(depth > chess_board_dimensions[0] * chess_board_dimensions[1]): break
           
           
 
 
       except TimeoutError:
-        print(f"Agent got to {max_depth} depth")
+        print(f"Agent got to depth {max_depth}")
         break # if we dont have time left, then we return the best we have for now
     return best_move
   def min_max_score(self, chess_board, depth, alpha, beta, max_or_nah, player, ops, start_time, time_limit, score_function):
