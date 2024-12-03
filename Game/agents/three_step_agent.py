@@ -108,7 +108,8 @@ class three_step_Agent(Agent):
     mobility_score = self.mobility_score(chess_board, player, ops)
     corner_score = self.corner_score(chess_board, player, ops)
     greedy_score = self.greedy_score(chess_board, player, ops) / (np.shape(chess_board)[0] * np.shape(chess_board)[1])
-    
+    e_score = self.edge_stability_score(chess_board, player, ops)
+
     # Number of empty spots to evaluate game phase
     num_empty_spots = np.sum(chess_board == 0)
     
@@ -116,10 +117,10 @@ class three_step_Agent(Agent):
       s = 30
       m = 20
       c = 1000
-      g = 80 
+      g = 80
       e = 0   
     elif 10 < num_empty_spots: # Just greedy and mobility at the end
-      s = 0
+      s = 8
       m = 10
       c = 1000
       g = 80
@@ -135,12 +136,12 @@ class three_step_Agent(Agent):
     else:
       s = 8 
       m = 12  
-      c = 15  
+      c = 1000
       g = 80  
       e = 5  
 
 
-    e_score = self.edge_stability_score(chess_board, player, ops)
+    
 
     total = (s * stability_score +m * mobility_score + c * corner_score + g * greedy_score +
             e * e_score)
