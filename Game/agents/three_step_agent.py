@@ -497,7 +497,7 @@ class three_step_Agent(Agent):
     
     def compute_move_scores(exploit,explore,n_prev,k,d):
       
-      total = d * exploit + k * np.sqrt(np.log(n_prev) / explore)
+      total = d * exploit + k * np.sqrt(np.log(n_prev) + 1 / explore)
       #print(f"Compute Move Scores: {total}")
       return total
 
@@ -509,7 +509,7 @@ class three_step_Agent(Agent):
     # based on num empty spots >> 3 diff phases
     
     TOTAL = 10
-    D = 10
+    D = 1
     K = 1
     
     
