@@ -510,7 +510,7 @@ class three_step_Agent(Agent):
     
     TOTAL = 10
     D = 1
-    K = 1
+    K = 10
     
     
     NUM_SIM_PER_NODE = int(num_sim_per_node * (treshold / num_empty_spots))
