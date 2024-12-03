@@ -471,7 +471,7 @@ class three_step_Agent(Agent):
           return i
       return -1
 
-    def simulate_to_end(chess_board,p,q,num_sim):
+    def simulate_to_end(chess_board,p,q,num_sim,start_time):
       total_sim_score = 0
       # simulates to end using random moves for both agents
       for sim in range(num_sim):
@@ -492,12 +492,14 @@ class three_step_Agent(Agent):
           p,q = swap_players(p,q)
           # checks for endgame
           is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
-        total_sim_score += p_score - opp_score 
-      return total_sim_score / num_sim     
+        total_sim_score += p_score - opp_score
+        if time.time() - start_time < 1.95:
+          break
+      return total_sim_score / (sim + 1)     
     
     def compute_move_scores(exploit,explore,n_prev,k,d):
       
-      total = d * exploit + k * np.sqrt(np.log(n_prev) + 1 / explore)
+      total = d * exploit + k * np.sqrt(np.log(n_prev+1)/ explore)
       #print(f"Compute Move Scores: {total}")
       return total
 
@@ -580,7 +582,7 @@ class three_step_Agent(Agent):
         parent_nodes.append(node_inds[-1] if node_inds else -1) ### Add to parent node, right now we arent
 
       # runs simulation
-      sim_score =  simulate_to_end(s,p,q, NUM_SIM_PER_NODE)
+      sim_score =  simulate_to_end(s,p,q, NUM_SIM_PER_NODE,start_time)
       
       # backpropagate results
       print(f"max_depth: {depth}")
@@ -591,7 +593,7 @@ class three_step_Agent(Agent):
         explore[ind][move_ind] += NUM_SIM_PER_NODE             # explore score increases by 1
         exploit[ind][move_ind] += sim_score     # exploits score increases by win magnitude
 
-      num_sim += 1 # Nice
+      num_sim += NUM_SIM_PER_NODE # Nice
     
     print(f"Agent ran {num_sim} simulations.")
     best_move = np.argmax(exploit[0]) # final decision? only exploit or also explore? 
