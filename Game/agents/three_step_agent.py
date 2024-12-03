@@ -1,4 +1,5 @@
 # Student agent: Add your own agent here
+from shutil import move
 from agents.agent import Agent
 from store import register_agent
 import sys
@@ -98,6 +99,10 @@ class three_step_Agent(Agent):
 
     return stability_score
   
+  def flip_score(self, chess_board, player, ops, move):
+     corner_score = self.corner_score(chess_board, player, ops)
+     return count_capture(chess_board, move, player) + 1000 * corner_score
+
   def ultimate_heuristic_min_max(self, chess_board, player, ops):
     stability_score = self.stability_score(chess_board, player, ops)
     mobility_score = self.mobility_score(chess_board, player, ops)
@@ -110,20 +115,20 @@ class three_step_Agent(Agent):
     if 20 < num_empty_spots:
       s = 30
       m = 20
-      c = 0 
+      c = 1000
       g = 80 
       e = 0   
     elif 10 < num_empty_spots: # Just greedy and mobility at the end
       s = 0
       m = 10
-      c = 0
+      c = 1000
       g = 80
       e = 0
 
     elif 5 < num_empty_spots: # Just greedy and mobility at the end
       s = 0
       m = 0
-      c = 0
+      c = 1000
       g = 100
       e = 0
 
@@ -182,6 +187,7 @@ class three_step_Agent(Agent):
     print(f"Stability: {s * stability_score}, Mobility: {m * mobility_score}, "f"Corners: {c * corner_score}, Greedy: {g * greedy_score}, "f"Edge Stability: {e * e_score}, "f"Total: {total}")
     
 
+
   def ultimate_heuristic_MCTS(self,chess_board,player,ops):
     stability_score = self.stability_score(chess_board, player, ops)
     mobility_score = self.mobility_score(chess_board, player, ops)
@@ -198,21 +204,9 @@ class three_step_Agent(Agent):
     #print(f"Stability: {s * stability_score}, Mobility: {m * mobility_score}, "f"Corners: {c * corner_score}, Greedy: {g * greedy_score}, "f"Edge Stability: {e * e_score}, "f"Total: {total}")
     return total
 
-  def print_ultimate_move_score_MCTS(self, chess_board, player, ops, ):
-    stability_score = self.stability_score(chess_board, player, ops)
-    mobility_score = self.mobility_score(chess_board, player, ops)
-    corner_score = self.corner_score(chess_board, player, ops)
-    greedy_score = self.greedy_score(chess_board, player, ops)
-
-    s = 8
-    m = 12
-    c = 10
-    g = 20
-    
-
-    total = (s * stability_score +m * mobility_score + c * corner_score + g * greedy_score)
-    
-    print(f"Stability: {s * stability_score}, Mobility: {m * mobility_score}, "f"Corners: {c * corner_score}, Greedy: {g * greedy_score} "f"Total: {total}")
+  def print_ultimate_move_score_MCTS(self, chess_board, player, ops, move):
+     corner_score = self.corner_score(chess_board, player, ops)
+     print( count_capture(chess_board, move, player) + 1000 * corner_score)
     
 
   def edge_stability_score(self, chess_board, player, ops):
@@ -295,8 +289,8 @@ class three_step_Agent(Agent):
     else: # First step MCTS
         time_limit_to_think = 1.95 # MCTS needs more time to return
         print('Using MCTS')
-        move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, num_sim_per_node=10, num_empty_spots=empty_spots, treshold=second_step, score_function=self.ultimate_heuristic_MCTS)
-        self.print_ultimate_move_score_MCTS(chess_board, player, opponent)
+        move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, num_sim_per_node=10, num_empty_spots=empty_spots, treshold=second_step, score_function=self.flip_score)
+        self.print_ultimate_move_score_MCTS(chess_board, player, opponent, move)
 
 
 
@@ -451,10 +445,10 @@ class three_step_Agent(Agent):
 
     def get_base_move_scores(chess_board,player,moves, score_function):
       scores = np.zeros(len(moves))
-      for i in range(len(moves)):
+      for i,move in enumerate(moves):
         # executes move
         CB = chess_board
-        scores[i] = score_function(CB, player, 3-player)
+        scores[i] = score_function(CB, player, 3-player, move)
         
       return scores
         
@@ -502,8 +496,8 @@ class three_step_Agent(Agent):
       return total_sim_score / num_sim     
     
     def compute_move_scores(exploit,explore,n_prev,k,d):
-      average_reward = exploit / explore
-      total = d * average_reward + k * np.sqrt(np.log(n_prev) / explore)
+      
+      total = d * exploit + k * np.sqrt(np.log(n_prev) / explore)
       #print(f"Compute Move Scores: {total}")
       return total
 
@@ -515,8 +509,8 @@ class three_step_Agent(Agent):
     # based on num empty spots >> 3 diff phases
     
     TOTAL = 10
-    D = int(TOTAL * (treshold / num_empty_spots))
-    K = TOTAL - D
+    D = 10
+    K = 1
     
     
     NUM_SIM_PER_NODE = int(num_sim_per_node * (treshold / num_empty_spots))
@@ -561,7 +555,7 @@ class three_step_Agent(Agent):
         # plays best fit move
         cur_scores = compute_move_scores(exploit[ind],explore[ind],prev_node_score,K, D)
         #print(f"curscores: {cur_scores}, EXPLORE: {explore[ind]}, EXPLOIT: {exploit[ind]}")
-        if cur_scores.size == 0: break
+        #if cur_scores.size == 0: break
         move_ind = np.argmax(cur_scores)
         move_inds.append(move_ind)
         if not move_inds:  # Skip backpropagation if no moves were executed
@@ -594,7 +588,7 @@ class three_step_Agent(Agent):
         ind = node_inds[depth-1-d]              # retrieves prev node explored in path
         node_scores[ind] += 1                   # updates node score by 1
         move_ind = move_inds[depth-1-d]         # retrieves move index in list
-        explore[ind][move_ind] += 1             # explore score increases by 1
+        explore[ind][move_ind] += NUM_SIM_PER_NODE             # explore score increases by 1
         exploit[ind][move_ind] += sim_score     # exploits score increases by win magnitude
 
       num_sim += 1 # Nice
