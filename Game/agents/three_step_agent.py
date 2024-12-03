@@ -273,8 +273,6 @@ class three_step_Agent(Agent):
     
     # what agout a locked-in heuristic, that gets zones that cant be stolen back?
 
-
-
     ### Might wanna go with len(possible_moves), instead of the number of plays remaining --- nvm doesnt work great
     #print(f"Valid moves amount: {len(get_valid_moves(chess_board, player))}")
     if (empty_spots < second_step):
@@ -294,8 +292,6 @@ class three_step_Agent(Agent):
 
 
 
-
-
     if (move == None) :
       print('smt went wrong and we didn\'t find a move :( giving random move...')
       move = random_move(chess_board,player)
@@ -309,8 +305,6 @@ class three_step_Agent(Agent):
 
   def min_max_give_me_ur_best_move(self, chess_board, player, start_time, time_limit, score_function):
     ops = 3 - player 
-
-    
     
     valid_moves = get_valid_moves(chess_board, player)
     #print("VALID MOVES:", len(valid_moves))
@@ -471,7 +465,7 @@ class three_step_Agent(Agent):
           return i
       return -1
 
-    def simulate_to_end(chess_board,p,q,num_sim,start_time):
+    def simulate_to_end(chess_board,p,q,num_sim,start_time,time_limit):
       total_sim_score = 0
       # simulates to end using random moves for both agents
       for sim in range(num_sim):
@@ -493,13 +487,14 @@ class three_step_Agent(Agent):
           # checks for endgame
           is_endgame, p_score, opp_score = check_endgame(chess_board,player,opponent)
         total_sim_score += p_score - opp_score
-        if time.time() - start_time < 1.95:
+        if time.time() - start_time > time_limit:
           break
-      return total_sim_score / (sim + 1)     
+      return total_sim_score, (sim + 1)     
     
     def compute_move_scores(exploit,explore,n_prev,k,d):
-      
-      total = d * exploit + k * np.sqrt(np.log(n_prev+1)/ explore)
+      total = d * (exploit/explore) + k * np.sqrt(np.log(n_prev+1)/explore)
+      # print(f"Explore value in compute: {k * np.sqrt(np.log(n_prev+1)/ explore)}")
+      # print(f"Exploit value in compute: {exploit*d}")
       #print(f"Compute Move Scores: {total}")
       return total
 
@@ -512,13 +507,13 @@ class three_step_Agent(Agent):
     
     TOTAL = 10
     D = 1
-    K = 10
+    K = 2
     
-    
-    NUM_SIM_PER_NODE = int(num_sim_per_node * (treshold / num_empty_spots))
-    if NUM_SIM_PER_NODE >= 1: NUM_SIM_PER_NODE 
-    else: NUM_SIM_PER_NODE = 1
+    NUM_SIM_PER_NODE = 1 #int(num_sim_per_node * (treshold / num_empty_spots))
+    if NUM_SIM_PER_NODE < 1:
+      NUM_SIM_PER_NODE = 1
     print(f"Using {NUM_SIM_PER_NODE} simulations per node")
+    
     # Step 1: gets list of possible moves
     POSSIBLE_MOVES = get_valid_moves(chess_board,player)
     num_sim = 0
@@ -529,7 +524,7 @@ class three_step_Agent(Agent):
     exploit = [get_base_move_scores(chess_board,player,POSSIBLE_MOVES, score_function)]
     explore = [np.ones(len(POSSIBLE_MOVES))] # num explorations
     node_scores = [1] # num node visits
-    parent_nodes = [-1] # Make sure we have a way to track the parent, so back prop
+    #parent_nodes = [-1] # Make sure we have a way to track the parent, so back prop
 
     while time.time() - start_time < time_limit:
       s = np.copy(chess_board) ### ADRIEN: Update the chessboard and copy it
@@ -555,7 +550,10 @@ class three_step_Agent(Agent):
         node_inds.append(ind)
         
         # plays best fit move
-        cur_scores = compute_move_scores(exploit[ind],explore[ind],prev_node_score,K, D)
+        k_factor = K * (0.9**depth)
+        d_factor = (D * depth)/2
+        cur_scores = compute_move_scores(exploit[ind],explore[ind],prev_node_score,k_factor,d_factor)
+        
         #print(f"curscores: {cur_scores}, EXPLORE: {explore[ind]}, EXPLOIT: {exploit[ind]}")
         #if cur_scores.size == 0: break
         move_ind = np.argmax(cur_scores)
@@ -579,10 +577,10 @@ class three_step_Agent(Agent):
         exploit.append(get_base_move_scores(s,p,new_moves, score_function))
         explore.append(np.ones(len(new_moves)))
         node_scores.append(1)
-        parent_nodes.append(node_inds[-1] if node_inds else -1) ### Add to parent node, right now we arent
+        #parent_nodes.append(node_inds[-1] if node_inds else -1) ### Add to parent node, right now we arent
 
       # runs simulation
-      sim_score =  simulate_to_end(s,p,q, NUM_SIM_PER_NODE,start_time)
+      sim_score, completed_sims =  simulate_to_end(s,p,q, NUM_SIM_PER_NODE,start_time,time_limit)
       
       # backpropagate results
       print(f"max_depth: {depth}")
@@ -590,7 +588,7 @@ class three_step_Agent(Agent):
         ind = node_inds[depth-1-d]              # retrieves prev node explored in path
         node_scores[ind] += 1                   # updates node score by 1
         move_ind = move_inds[depth-1-d]         # retrieves move index in list
-        explore[ind][move_ind] += NUM_SIM_PER_NODE             # explore score increases by 1
+        explore[ind][move_ind] += completed_sims             # explore score increases by 1
         exploit[ind][move_ind] += sim_score     # exploits score increases by win magnitude
 
       num_sim += NUM_SIM_PER_NODE # Nice
@@ -598,6 +596,6 @@ class three_step_Agent(Agent):
     print(f"Agent ran {num_sim} simulations.")
     best_move = np.argmax(exploit[0]) # final decision? only exploit or also explore? 
     print(f"EXPLORE SCORES: {explore[0]}")
-    print(f"END Move Scores: {compute_move_scores(explore[0], exploit[0], 1, K, D)} with K = {K} and D = {D}")
+    print(f"END Move Scores: {compute_move_scores(explore[0], exploit[0], 1, 1, 1)} with K = {K} and D = {D}")
     print(f"EXPLOIT SCORES: {exploit[0]}")
     return POSSIBLE_MOVES[best_move]
