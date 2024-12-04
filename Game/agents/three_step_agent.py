@@ -588,7 +588,7 @@ class three_step_Agent(Agent):
         ind = node_inds[depth-1-d]              # retrieves prev node explored in path
         node_scores[ind] += 1                   # updates node score by 1
         move_ind = move_inds[depth-1-d]         # retrieves move index in list
-        explore[ind][move_ind] += completed_sims             # explore score increases by 1
+        explore[ind][move_ind] += 1             # explore score increases by 1
         exploit[ind][move_ind] += sim_score     # exploits score increases by win magnitude
 
       num_sim += NUM_SIM_PER_NODE # Nice
