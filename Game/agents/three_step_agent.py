@@ -36,14 +36,12 @@ class three_step_Agent(Agent):
 
 # score function from ./gpt_greedy_corners.py
   def corner_score(self, chess_board, player, ops):
-
-
       # Corner positions are highly valuable
       corners = [(0, 0), (0, chess_board.shape[1] - 1), 
                 (chess_board.shape[0] - 1, 0), 
                 (chess_board.shape[0] - 1, chess_board.shape[1] - 1)]
-      corner_score = sum(1 for corner in corners if chess_board[corner] == player) * 10
-      corner_penalty = sum(1 for corner in corners if chess_board[corner] == ops) * -10
+      corner_score = sum(1 for corner in corners if chess_board[corner] == player)
+      corner_penalty = sum(1 for corner in corners if chess_board[corner] == ops)
 
       # Combine scores
       total_score = corner_score + corner_penalty
@@ -99,9 +97,22 @@ class three_step_Agent(Agent):
 
     return stability_score
   
+
+
+  def gpt_score(self,board,player,ops, move=(0,0)):
+        corners = [(0, 0), (0, board.shape[1] - 1), (board.shape[0] - 1, 0), (board.shape[0] - 1, board.shape[1] - 1)]
+        corner_score = sum(1 for corner in corners if board[corner] == player) * 10
+        corner_penalty = sum(1 for corner in corners if board[corner] == 3 - player) * -10
+
+        # Mobility: the number of moves the opponent can make
+        opponent_moves = len(get_valid_moves(board, 3 - player))
+        mobility_score = -opponent_moves
+        _, player_score, opponent_score = check_endgame(board, player, 3 - player)
+        total_score = player_score - opponent_score + corner_score + corner_penalty + mobility_score
+        return total_score
+  
   def flip_score(self, chess_board, player, ops, move):
-     corner_score = self.corner_score(chess_board, player, ops)
-     return count_capture(chess_board, move, player) + 1000 * corner_score
+     return count_capture(chess_board, move, player)
 
   def ultimate_heuristic_min_max(self, chess_board, player, ops):
     stability_score = self.stability_score(chess_board, player, ops)
@@ -113,38 +124,18 @@ class three_step_Agent(Agent):
     # Number of empty spots to evaluate game phase
     num_empty_spots = np.sum(chess_board == 0)
     
-    if 20 < num_empty_spots:
-      s = 30
-      m = 20
-      c = 1000
-      g = 80
-      e = 0   
-    elif 10 < num_empty_spots: # Just greedy and mobility at the end
-      s = 8
-      m = 10
-      c = 1000
-      g = 80
-      e = 0
-
-    elif 5 < num_empty_spots: # Just greedy and mobility at the end
-      s = 0
-      m = 0
-      c = 1000
-      g = 100
-      e = 0
-
+    if num_empty_spots > 20:
+        weights = {'stability': 20, 'mobility': 30, 'corners': 50, 'greedy': 100, 'edges': 5}
+    elif num_empty_spots > 10:
+        weights = {'stability': 30, 'mobility': 25, 'corners': 30, 'greedy': 150, 'edges': 10}
     else:
-      s = 8 
-      m = 12  
-      c = 1000
-      g = 80  
-      e = 5  
+        weights = {'stability': 40, 'mobility': 10, 'corners': 40, 'greedy': 100, 'edges': 0}
 
 
-    
 
-    total = (s * stability_score +m * mobility_score + c * corner_score + g * greedy_score +
-            e * e_score)
+    total = (weights['stability'] * stability_score +weights['mobility'] * mobility_score + weights['corners'] * corner_score + weights['greedy'] * greedy_score +
+            weights['edges'] * e_score)
+
     
     #print(f"Stability: {s * stability_score}, Mobility: {m * mobility_score}, "f"Corners: {c * corner_score}, Greedy: {g * greedy_score}, "f"Edge Stability: {e * e_score}, "f"Total: {total}")
     return total
@@ -154,60 +145,76 @@ class three_step_Agent(Agent):
     stability_score = self.stability_score(chess_board, player, ops)
     mobility_score = self.mobility_score(chess_board, player, ops)
     corner_score = self.corner_score(chess_board, player, ops)
-    greedy_score = self.greedy_score(chess_board, player, ops)
-    
+    greedy_score = self.greedy_score(chess_board, player, ops) / (np.shape(chess_board)[0] * np.shape(chess_board)[1])
+    e_score = self.edge_stability_score(chess_board, player, ops)
+
     # Number of empty spots to evaluate game phase
     num_empty_spots = np.sum(chess_board == 0)
     
-    if 20 < num_empty_spots:
-      s = 2
-      m = 20
-      c = 0 
-      g = 10 
-      e = 0   
-    elif 10 < num_empty_spots: # Just greedy and mobility at the end
-      s = 0
-      m = 20
-      c = 0
-      g = 10
-      e = 0
-
+    if num_empty_spots > 20:
+        weights = {'stability': 20, 'mobility': 30, 'corners': 50, 'greedy': 100, 'edges': 5}
+    elif num_empty_spots > 10:
+        weights = {'stability': 30, 'mobility': 25, 'corners': 30, 'greedy': 150, 'edges': 10}
     else:
-      s = 2 
-      m = 12  
-      c = 15  
-      g = 8  
-      e = 5  
+        weights = {'stability': 40, 'mobility': 10, 'corners': 40, 'greedy': 100, 'edges': 0}
 
 
-    e_score = self.edge_stability_score(chess_board, player, ops)
 
-    total = (s * stability_score +m * mobility_score + c * corner_score + g * greedy_score +
-            e * e_score)
-    
-    print(f"Stability: {s * stability_score}, Mobility: {m * mobility_score}, "f"Corners: {c * corner_score}, Greedy: {g * greedy_score}, "f"Edge Stability: {e * e_score}, "f"Total: {total}")
+    total = (weights['stability'] * stability_score +weights['mobility'] * mobility_score + weights['corners'] * corner_score + weights['greedy'] * greedy_score +
+            weights['edges'] * e_score)
+
+    print(f"Stability: {weights['stability'] * stability_score}, Mobility: {weights['mobility'] * mobility_score}, Corners: {weights['corners'] * corner_score}, Greedy: {weights['greedy'] * greedy_score}, Edge Stability: {weights['edges'] * e_score}, Total: {total}")
     
 
 
-  def ultimate_heuristic_MCTS(self,chess_board,player,ops):
+  def ultimate_heuristic_MCTS(self,chess_board,player,ops,move):
     stability_score = self.stability_score(chess_board, player, ops)
     mobility_score = self.mobility_score(chess_board, player, ops)
     corner_score = self.corner_score(chess_board, player, ops)
     greedy_score = self.greedy_score(chess_board, player, ops) / (np.shape(chess_board)[0] * np.shape(chess_board)[1])
+    flip_score = self.flip_score(chess_board, player, ops, move)
+    e_score = self.edge_stability_score(chess_board, player, ops)
 
-    s = 0 
-    m = 0  
-    c = 0
-    g = 1
-
-    total = (s * stability_score +m * mobility_score + c * corner_score + g * greedy_score)
+    num_empty_spots = np.sum(chess_board == 0)
     
-    #print(f"Stability: {s * stability_score}, Mobility: {m * mobility_score}, "f"Corners: {c * corner_score}, Greedy: {g * greedy_score}, "f"Edge Stability: {e * e_score}, "f"Total: {total}")
+    if num_empty_spots > 20:
+        weights = {'stability': 20, 'mobility': 30, 'corners': 50, 'greedy': 100, 'edges': 5, 'flip': 50}
+    elif num_empty_spots > 10:
+        weights = {'stability': 30, 'mobility': 25, 'corners': 30, 'greedy': 150, 'edges': 10, 'flip': 50}
+    else:
+        weights = {'stability': 40, 'mobility': 10, 'corners': 40, 'greedy': 100, 'edges': 0, 'flip': 50}
+
+
+
+    total = (weights['stability'] * stability_score +weights['mobility'] * mobility_score + weights['corners'] * corner_score + weights['greedy'] * greedy_score +
+            weights['edges'] * e_score + weights['flip'] * flip_score)
+    
     return total
 
   def print_ultimate_move_score_MCTS(self, chess_board, player, ops, move):
-     corner_score = self.corner_score(chess_board, player, ops)
-     print( count_capture(chess_board, move, player) + 1000 * corner_score)
+    stability_score = self.stability_score(chess_board, player, ops)
+    mobility_score = self.mobility_score(chess_board, player, ops)
+    corner_score = self.corner_score(chess_board, player, ops)
+    greedy_score = self.greedy_score(chess_board, player, ops) / (np.shape(chess_board)[0] * np.shape(chess_board)[1])
+    flip_score = self.flip_score(chess_board, player, ops, move)
+    e_score = self.edge_stability_score(chess_board, player, ops)
+
+    num_empty_spots = np.sum(chess_board == 0)
+    
+    if num_empty_spots > 20:
+        weights = {'stability': 20, 'mobility': 30, 'corners': 50, 'greedy': 10, 'edges': 5, 'flip': 5}
+    elif num_empty_spots > 10:
+        weights = {'stability': 30, 'mobility': 25, 'corners': 30, 'greedy': 15, 'edges': 10, 'flip': 5}
+    else:
+        weights = {'stability': 40, 'mobility': 10, 'corners': 40, 'greedy': 10, 'edges': 0, 'flip': 5}
+
+
+    total = (weights['stability'] * stability_score +weights['mobility'] * mobility_score + weights['corners'] * corner_score + weights['greedy'] * greedy_score +
+            weights['edges'] * e_score + weights['flip'] * flip_score)
+    print(f" stability: {weights['stability'] * stability_score}, mobility {weights['mobility'] * mobility_score}, corners: {weights['corners'] * corner_score}, greedy: {weights['greedy'] * greedy_score}, edge: { weights['edges'] * e_score}, flip: { weights['flip'] * flip_score}, total: {total}")
+    
+    
+    
     
 
   def edge_stability_score(self, chess_board, player, ops):
@@ -268,7 +275,7 @@ class three_step_Agent(Agent):
     # give ourselves a buffer to return.
 
     # Start with mcts, then min_max when less empty spots
-    second_step = 30
+    second_step = 35
     empty_spots = np.sum(chess_board == 0)
     print(f"empty_spots: {empty_spots}")
     
@@ -288,7 +295,7 @@ class three_step_Agent(Agent):
     else: # First step MCTS
         time_limit_to_think = 1.95 # MCTS needs more time to return
         print('Using MCTS')
-        move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, num_sim_per_node=10, num_empty_spots=empty_spots, treshold=second_step, score_function=self.flip_score)
+        move = self.mcts_give_me_ur_best_move(chess_board, player, time.time(), time_limit_to_think, num_sim_per_node=10, num_empty_spots=empty_spots, treshold=second_step, score_function=self.gpt_score)
         self.print_ultimate_move_score_MCTS(chess_board, player, opponent, move)
 
 
@@ -493,6 +500,7 @@ class three_step_Agent(Agent):
       return total_sim_score, (sim + 1)     
     
     def compute_move_scores(exploit,explore,n_prev,k,d):
+      print(f"n_prev: {n_prev}, explore: {explore}, log term: {np.log(n_prev + 1)}, sqrt term: {np.log(n_prev + 1) / explore}")
       total = d * (exploit/explore) + k * np.sqrt(np.log(n_prev+1)/explore)
       # print(f"Explore value in compute: {k * np.sqrt(np.log(n_prev+1)/ explore)}")
       # print(f"Exploit value in compute: {exploit*d}")
@@ -584,11 +592,12 @@ class three_step_Agent(Agent):
       sim_score, completed_sims =  simulate_to_end(s,p,q, NUM_SIM_PER_NODE,start_time,time_limit)
       
       # backpropagate results
-      print(f"max_depth: {depth}")
+      #print(f"max_depth: {depth}")
       for d in range(depth): 
         ind = node_inds[depth-1-d]              # retrieves prev node explored in path
         node_scores[ind] += 1                   # updates node score by 1
         move_ind = move_inds[depth-1-d]         # retrieves move index in list
+        print(f"completed_sims: {completed_sims}")
         explore[ind][move_ind] += completed_sims             # explore score increases by 1
         exploit[ind][move_ind] += sim_score     # exploits score increases by win magnitude
 
